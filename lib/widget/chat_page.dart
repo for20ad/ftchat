@@ -1,45 +1,53 @@
-import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
-
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter/material.dart';
-import 'package:ftchat/chat_message.dart';
 import 'package:logger/logger.dart';
+import 'package:ftchat/widget/chat_message.dart';
 
 
-class HomePage extends StatefulWidget {
-
-  const HomePage({super.key});
-
+class ChatPage extends StatefulWidget {
+  const ChatPage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<ChatPage> createState() => _ChatPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _ChatPageState extends State<ChatPage> {
+
+  late IO.Socket socket;
+
   GlobalKey<AnimatedListState> _animListKey = GlobalKey<AnimatedListState>();
   var logger = Logger();
   List<String> _chats = [];
   TextEditingController _textEditingController = TextEditingController();
 
-
-  PreferredSizeWidget _buildAppBar() {
-    if (Platform.isIOS) {
-      return CupertinoNavigationBar(
-        middle: Text('chatApp'),
-      );
-    } else {
-      return AppBar(
-        title: Text('chatApp'),
-      );
-    }
+  void connectToServer(){
+    socket = IO.io('https://ce98-210-179-61-242.ngrok-free.app', <String, dynamic>{
+      'transports': ['websocket'],
+      'extraHeaders': {},
+    });
+    socket.connect();
+    socket.on('chat_message', (data) {
+      print( "data:::$data" );
+      setState(() {
+        _chats.insert(0,data);
+        //_handleSubmited(data);
+      });
+    });
   }
+  @override
+  void initState() {
+    super.initState();
+    connectToServer();
+  }
+
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
+      appBar: AppBar(
+        title: Text('Mss'),
+      ),
       body: Center(
         child: Column(
           children: [
@@ -48,7 +56,7 @@ class _HomePageState extends State<HomePage> {
                 key: _animListKey,
                 reverse: true,
                 itemBuilder: _buildItem,
-                initialItemCount: 0,
+                initialItemCount: _chats.length,
               ),
             ),
             Column(
@@ -57,16 +65,6 @@ class _HomePageState extends State<HomePage> {
                   padding: EdgeInsets.symmetric(horizontal: 8.0),
                   child: Row(
                     children: [
-                      Platform.isIOS?
-                      Expanded(
-                        child: CupertinoTextField(
-                          controller: _textEditingController,
-                          onSubmitted: _handleSubmited,
-                          placeholder: '메시지 입력',
-                        ),
-                      )
-
-                          :
                       Expanded(
                         child: TextField(
                           controller: _textEditingController,
@@ -101,13 +99,16 @@ class _HomePageState extends State<HomePage> {
     return ChatMessage(_chats[index], animation: animation,);
   }
 
+
   void _handleSubmited( String text ) {
 
+    if( text.isNotEmpty ){
+      _chats.insert(0,text);
 
-    _chats.insert(0,text);
+      socket.emit("chat_message",{'message':text});
+      _animListKey.currentState?.insertItem(0);
+      _textEditingController.clear();
+    }
 
-    _animListKey.currentState?.insertItem(0);
-    _textEditingController.clear();
   }
 }
-
