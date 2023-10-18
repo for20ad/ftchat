@@ -21,7 +21,7 @@ class _ChatPageState extends State<ChatPage> {
   TextEditingController _textEditingController = TextEditingController();
 
   void connectToServer(){
-    socket = IO.io('https://ce98-210-179-61-242.ngrok-free.app', <String, dynamic>{
+    socket = IO.io('https://node.dodoom.co.kr', <String, dynamic>{
       'transports': ['websocket'],
       'extraHeaders': {},
     });
