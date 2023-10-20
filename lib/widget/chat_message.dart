@@ -71,7 +71,7 @@ class ChatMessage extends StatelessWidget {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: isMe? Colors.yellowAccent:Colors.black54,
+                        color: isMe? Colors.amber:Colors.black54,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(10),
                           topRight: Radius.circular(10),
