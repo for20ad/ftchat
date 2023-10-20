@@ -21,19 +21,24 @@ class _ChatPageState extends State<ChatPage> {
   TextEditingController _textEditingController = TextEditingController();
 
   void connectToServer(){
-    socket = IO.io('https://node.dodoom.co.kr', <String, dynamic>{
-      'transports': ['websocket'],
-      'extraHeaders': {},
-    });
-    socket.connect();
+    socket = IO.io('https://node.dodoom.co.kr',
+      IO.OptionBuilder().setTransports(['websocket']).setQuery(
+          {'username': 'test'}).build(),
+    );
+    socket.onConnect((data) => print('Connection established'));
+    socket.onConnectError((data) => print('Connect Error: $data'));
+    socket.onDisconnect((data) => print('Socket.IO server disconnected'));
     socket.on('chat_message', (data) {
-      print( "data:::$data" );
-      setState(() {
-        _chats.insert(0,data);
-        //_handleSubmited(data);
-      });
+      print("data:::$data");
+      if (!_chats.contains(data)) {
+        setState(() {
+          _chats.insert(0,data);
+        });
+        _animListKey.currentState?.insertItem(0);
+      }
     });
   }
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +49,7 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    print("갯수:::${_chats.length}");
     return Scaffold(
       appBar: AppBar(
         title: Text('Mss'),
@@ -105,7 +111,7 @@ class _ChatPageState extends State<ChatPage> {
     if( text.isNotEmpty ){
       _chats.insert(0,text);
 
-      socket.emit("chat_message",{'message':text});
+      socket.emit("chat_message",{'message':text,});
       _animListKey.currentState?.insertItem(0);
       _textEditingController.clear();
     }
