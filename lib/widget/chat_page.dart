@@ -1,120 +1,87 @@
-import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
-import 'package:ftchat/widget/chat_message.dart';
+import 'package:socket_io_client/socket_io_client.dart' as socketIO;
 
-
-class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
-
-  @override
-  State<ChatPage> createState() => _ChatPageState();
+void main() {
+  runApp(ChatApp());
 }
 
-class _ChatPageState extends State<ChatPage> {
+class ChatApp extends StatefulWidget {
+  @override
+  _ChatAppState createState() => _ChatAppState();
+}
 
-  late IO.Socket socket;
-
-  GlobalKey<AnimatedListState> _animListKey = GlobalKey<AnimatedListState>();
-  var logger = Logger();
-  List<String> _chats = [];
-  TextEditingController _textEditingController = TextEditingController();
-
-  void connectToServer(){
-    socket = IO.io('https://node.dodoom.co.kr',
-      IO.OptionBuilder().setTransports(['websocket']).setQuery(
-          {'username': 'test'}).build(),
-    );
-    socket.onConnect((data) => print('Connection established'));
-    socket.onConnectError((data) => print('Connect Error: $data'));
-    socket.onDisconnect((data) => print('Socket.IO server disconnected'));
-    socket.on('chat_message', (data) {
-      print("data:::$data");
-      if (!_chats.contains(data)) {
-        setState(() {
-          _chats.insert(0,data);
-        });
-        _animListKey.currentState?.insertItem(0);
-      }
-    });
-  }
+class _ChatAppState extends State<ChatApp> {
+  TextEditingController messageController = TextEditingController();
+  late socketIO.Socket socket;
+  List<String> messages = [];
 
   @override
   void initState() {
     super.initState();
-    connectToServer();
+    socket = socketIO.io('https://node.dodoom.co.kr', <String, dynamic>{
+      'transports': ['websocket'],
+    });
+    socket.on('chat_message_recive', (data) {
+      addMessageToChat(data);
+    });
   }
 
+  void sendMessage() {
+    final message = messageController.text;
+    final userId = 'for20ad';
+    final time = DateTime.now().toString();
+    socket.emit('chat_message', {'message': message, 'userId': userId, 'time': time});
+    messageController.clear();
+  }
 
+  void addMessageToChat(data) {
+    setState(() {
+      final message = data['message'];
+      final userId = data['userId'];
+      final time = data['time'];
+      messages.add('$userId ($time): $message');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    print("갯수:::${_chats.length}");
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Mss'),
-      ),
-      body: Center(
-        child: Column(
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Chat App'),
+        ),
+        body: Column(
           children: [
             Expanded(
-              child: AnimatedList(
-                key: _animListKey,
-                reverse: true,
-                itemBuilder: _buildItem,
-                initialItemCount: _chats.length,
+              child: ListView.builder(
+                itemCount: messages.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(messages[index]),
+                  );
+                },
               ),
             ),
-            Column(
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _textEditingController,
-                          onSubmitted: _handleSubmited,
-                          decoration: InputDecoration(
-                            hintText: "메시지 입력",
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 8.0,),
-                      IconButton(
-                        onPressed: () async{
-                          _handleSubmited(_textEditingController.text);
-                        },
-                        icon: Icon(
-                          Icons.send,
-                        ),
-                      )
-                    ],
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: messageController,
+                      decoration: InputDecoration(hintText: 'Type a message'),
+                    ),
                   ),
-                ),
-
-              ],
+                  IconButton(
+                    icon: Icon(Icons.send),
+                    onPressed: sendMessage,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
-
     );
-  }
-  Widget _buildItem( context, index, animation ){
-    return ChatMessage(_chats[index], animation: animation,);
-  }
-
-
-  void _handleSubmited( String text ) {
-
-    if( text.isNotEmpty ){
-      _chats.insert(0,text);
-
-      socket.emit("chat_message",{'message':text,});
-      _animListKey.currentState?.insertItem(0);
-      _textEditingController.clear();
-    }
-
   }
 }
