@@ -80,7 +80,7 @@ class _ChatAppState extends State<ChatApp> {
 
                   IconButton(
                     onPressed: () async{
-                      sendMessage;
+                      sendMessage(messages);
                     },
                     icon: Icon(
                       Icons.send,
