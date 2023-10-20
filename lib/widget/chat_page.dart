@@ -25,7 +25,7 @@ class _ChatAppState extends State<ChatApp> {
     });
   }
 
-  void sendMessage( data ) {
+  void sendMessage( messages ) {
     final message = messageController.text;
     final time = DateTime.now().toString();
     socket.emit('chat_message', {'message': message, 'userId': userId, 'time': time});
@@ -79,8 +79,11 @@ class _ChatAppState extends State<ChatApp> {
                   ),
 
                   IconButton(
-                    onPressed: () async{
-                      sendMessage;
+                    onPressed: (){
+                      print(
+                        '11'
+                      );
+                      sendMessage( messages );
                     },
                     icon: Icon(
                       Icons.send,
