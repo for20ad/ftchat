@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as socketIO;
-
-void main() {
-  runApp(ChatApp());
-}
+import 'package:ftchat/widget/chat_message.dart';
 
 class ChatApp extends StatefulWidget {
   @override
@@ -13,7 +10,9 @@ class ChatApp extends StatefulWidget {
 class _ChatAppState extends State<ChatApp> {
   TextEditingController messageController = TextEditingController();
   late socketIO.Socket socket;
-  List<String> messages = [];
+  List<Map<String, dynamic>> messages = [];
+  GlobalKey<AnimatedListState> _animListKey = GlobalKey<AnimatedListState>();
+  final userId = 'for21ad';
 
   @override
   void initState() {
@@ -21,14 +20,13 @@ class _ChatAppState extends State<ChatApp> {
     socket = socketIO.io('https://node.dodoom.co.kr', <String, dynamic>{
       'transports': ['websocket'],
     });
-    socket.on('chat_message_recive', (data) {
+    socket.on('chat_message_receive', (data) {
       addMessageToChat(data);
     });
   }
 
-  void sendMessage() {
+  void sendMessage( data ) {
     final message = messageController.text;
-    final userId = 'for20ad';
     final time = DateTime.now().toString();
     socket.emit('chat_message', {'message': message, 'userId': userId, 'time': time});
     messageController.clear();
@@ -36,11 +34,15 @@ class _ChatAppState extends State<ChatApp> {
 
   void addMessageToChat(data) {
     setState(() {
-      final message = data['message'];
-      final userId = data['userId'];
-      final time = data['time'];
-      messages.add('$userId ($time): $message');
+      messages.insert(0,data);
+      _animListKey.currentState?.insertItem(0);
     });
+  }
+
+  Widget _buildItem(context, index, animation) {
+    final data = messages[index];
+    final isMe = data['userId'] == userId;
+    return ChatMessage(data, animation: animation, isMe: isMe);
   }
 
   @override
@@ -53,29 +55,37 @@ class _ChatAppState extends State<ChatApp> {
         body: Column(
           children: [
             Expanded(
-              child: ListView.builder(
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(messages[index]),
-                  );
-                },
+              child: AnimatedList(
+                key: _animListKey,
+                reverse: true,
+                initialItemCount: messages.length,
+                itemBuilder: _buildItem,
               ),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
+
+
                   Expanded(
                     child: TextField(
                       controller: messageController,
-                      decoration: InputDecoration(hintText: 'Type a message'),
+                      onSubmitted: sendMessage,
+                      decoration: InputDecoration(
+                        hintText: "메시지 입력",
+                      ),
                     ),
                   ),
+
                   IconButton(
-                    icon: Icon(Icons.send),
-                    onPressed: sendMessage,
-                  ),
+                    onPressed: () async{
+                      sendMessage;
+                    },
+                    icon: Icon(
+                      Icons.send,
+                    ),
+                  )
                 ],
               ),
             ),
@@ -85,3 +95,4 @@ class _ChatAppState extends State<ChatApp> {
     );
   }
 }
+
