@@ -28,7 +28,7 @@ class _ChatAppState extends State<ChatApp> {
 
   void sendMessage() {
     final message = messageController.text;
-    final userId = 'for20ad';
+    final userId = 'for21ad';
     final time = DateTime.now().toString();
     socket.emit('chat_message', {'message': message, 'userId': userId, 'time': time});
     messageController.clear();
