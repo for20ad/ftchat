@@ -67,6 +67,7 @@ class ChatMessage extends StatelessWidget {
                       data['userId'],
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
+                        fontSize: 12
                       ),
                     ),
                     Container(
@@ -83,7 +84,7 @@ class ChatMessage extends StatelessWidget {
                       child: Text(
                         data['message'],
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 12,
                           color: isMe?Colors.black:Colors.white,
                         ),
                       ),
@@ -91,7 +92,7 @@ class ChatMessage extends StatelessWidget {
                     Text(
                         formatMessageTime(data['time']),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 9,
                         )
                     ),
                   ],

@@ -12,7 +12,10 @@ class _ChatAppState extends State<ChatApp> {
   late socketIO.Socket socket;
   List<Map<String, dynamic>> messages = [];
   GlobalKey<AnimatedListState> _animListKey = GlobalKey<AnimatedListState>();
-  final userId = 'for20ad';
+  FocusNode messageFocusNode = FocusNode();
+
+
+  final userId = 'for22ad';
 
   @override
   void initState() {
@@ -30,6 +33,7 @@ class _ChatAppState extends State<ChatApp> {
     final time = DateTime.now().toString();
     socket.emit('chat_message', {'message': message, 'userId': userId, 'time': time});
     messageController.clear();
+    messageFocusNode.requestFocus();
   }
 
   void addMessageToChat(data) {
@@ -52,44 +56,51 @@ class _ChatAppState extends State<ChatApp> {
         appBar: AppBar(
           title: Text('Chat App'),
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: AnimatedList(
-                key: _animListKey,
-                reverse: true,
-                initialItemCount: messages.length,
-                itemBuilder: _buildItem,
+        body: GestureDetector(
+          onTap: () {
+            FocusScope.of(context).unfocus(); // 키보드 닫기 이벤트
+          },
+          child: Column(
+            children: [
+              Expanded(
+                child: AnimatedList(
+                  key: _animListKey,
+                  reverse: true,
+                  initialItemCount: messages.length,
+                  itemBuilder: _buildItem,
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
 
 
-                  Expanded(
-                    child: TextField(
-                      controller: messageController,
-                      onSubmitted: sendMessage,
-                      decoration: InputDecoration(
-                        hintText: "메시지 입력",
+                    Expanded(
+                      child: TextField(
+                        keyboardType: TextInputType.text,
+                        controller: messageController,
+                        onSubmitted: sendMessage,
+                        focusNode: messageFocusNode,
+                        decoration: InputDecoration(
+                          hintText: "메시지 입력",
+                        ),
                       ),
                     ),
-                  ),
 
-                  IconButton(
-                    onPressed: () async{
-                      sendMessage(messages);
-                    },
-                    icon: Icon(
-                      Icons.send,
-                    ),
-                  )
-                ],
+                    IconButton(
+                      onPressed: () async{
+                        sendMessage(messages);
+                      },
+                      icon: Icon(
+                        Icons.send,
+                      ),
+                    )
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
